@@ -20,16 +20,7 @@ export async function registerRoutes(
 ): Promise<Server> {
   // Set up Passport auth
   setupAuth(app);
-
-  // --- Auth Routes ---
-  // Handled by setupAuth mostly, but if we have custom ones:
-  // POST /api/register is in setupAuth usually, or we define it here if we want custom control.
-  // We'll let setupAuth handle the basics, but implement register if it's missing there.
   
-  // Note: setupAuth usually adds /api/login, /api/register, /api/logout, /api/user
-  // so we might duplicate if we are not careful.
-  // The provided setupAuth helper (which I need to write) will handle it.
-
   // --- Products ---
   app.get(api.products.list.path, async (req, res) => {
     const products = await storage.getProducts();
