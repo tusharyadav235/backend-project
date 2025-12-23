@@ -12,8 +12,8 @@ export default {
       },
       colors: {
         // Flat / base colors (regular buttons)
-        background: "hsl(var(--background) / <alpha-value>)",
-        foreground: "hsl(var(--foreground) / <alpha-value>)",
+        background: "hsl(60 14% 95% / <alpha-value>)",
+        foreground: "hsl(0 0% 20% / <alpha-value>)",
         border: "hsl(var(--border) / <alpha-value>)",
         input: "hsl(var(--input) / <alpha-value>)",
         card: {
@@ -27,8 +27,8 @@ export default {
           border: "hsl(var(--popover-border) / <alpha-value>)",
         },
         primary: {
-          DEFAULT: "hsl(var(--primary) / <alpha-value>)",
-          foreground: "hsl(var(--primary-foreground) / <alpha-value>)",
+          DEFAULT: "hsl(120 40% 17% / <alpha-value>)",
+          foreground: "hsl(60 14% 95% / <alpha-value>)", // Light cream on dark green
           border: "var(--primary-border)",
         },
         secondary: {
@@ -42,8 +42,8 @@ export default {
           border: "var(--muted-border)",
         },
         accent: {
-          DEFAULT: "hsl(var(--accent) / <alpha-value>)",
-          foreground: "hsl(var(--accent-foreground) / <alpha-value>)",
+          DEFAULT: "hsl(28 67% 44% / <alpha-value>)",
+          foreground: "hsl(60 14% 95% / <alpha-value>)",
           border: "var(--accent-border)",
         },
         destructive: {
@@ -83,8 +83,8 @@ export default {
         },
       },
       fontFamily: {
-        sans: ["var(--font-sans)"],
-        serif: ["var(--font-serif)"],
+        sans: ["'DM Sans'", "sans-serif"],
+        serif: ["'Merriweather'", "serif"],
         mono: ["var(--font-mono)"],
       },
       keyframes: {
