@@ -15,6 +15,7 @@ import Contact from "@/pages/Contact";
 import Admin from "@/pages/Admin";
 import Login from "@/pages/Login";
 import Cart from "@/pages/Cart";
+import Orders from "@/pages/Orders";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -30,6 +31,7 @@ function Router() {
           <Route path="/admin" component={Admin} />
           <Route path="/login" component={Login} />
           <Route path="/cart" component={Cart} />
+          <Route path="/orders" component={Orders} />
           <Route component={NotFound} />
         </Switch>
       </main>

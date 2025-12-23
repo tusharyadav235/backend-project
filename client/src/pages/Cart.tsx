@@ -5,11 +5,22 @@ import { Trash2, Plus, Minus, ArrowLeft } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function Cart() {
   const { items, removeFromCart, updateQuantity, total, clearCart } = useCart();
   const { user } = useAuth();
   const { toast } = useToast();
+  const [showDelivery, setShowDelivery] = useState(false);
+  const [delivery, setDelivery] = useState({
+    shippingAddress: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    phone: '',
+  });
 
   const handleCheckout = async () => {
     if (!user) {
@@ -21,12 +32,46 @@ export default function Cart() {
       return;
     }
 
-    // Mock checkout flow for MVP since Razorpay integration requires API keys
-    toast({
-      title: "Order Placed!",
-      description: "Thank you for your order. We will contact you shortly.",
-    });
-    clearCart();
+    if (!delivery.shippingAddress || !delivery.city) {
+      toast({
+        title: "Complete Delivery Address",
+        description: "Please fill in your delivery address.",
+        variant: "destructive"
+      });
+      setShowDelivery(true);
+      return;
+    }
+
+    if (items.length === 0) return;
+
+    const firstItem = items[0];
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productId: firstItem.id,
+          quantity: firstItem.quantity,
+          ...delivery,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Checkout failed');
+      
+      const data = await response.json();
+      toast({
+        title: "Order Placed!",
+        description: "Your order has been created. Processing payment...",
+      });
+      clearCart();
+      setTimeout(() => window.location.href = '/orders', 1000);
+    } catch (err) {
+      toast({
+        title: "Checkout Failed",
+        description: "There was an error processing your order.",
+        variant: "destructive"
+      });
+    }
   };
 
   if (items.length === 0) {
@@ -102,11 +147,10 @@ export default function Cart() {
                         
                         <Button 
                           variant="ghost" 
-                          size="sm" 
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                          size="sm"
                           onClick={() => removeFromCart(item.id)}
                         >
-                          <Trash2 className="w-4 h-4 mr-2" /> Remove
+                          <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
                     </div>
@@ -114,49 +158,107 @@ export default function Cart() {
                 </Card>
               );
             })}
-            
-            <Link href="/products">
-              <Button variant="link" className="pl-0 text-primary font-bold">
-                <ArrowLeft className="w-4 h-4 mr-2" /> Continue Shopping
-              </Button>
-            </Link>
           </div>
 
-          {/* Order Summary */}
-          <div className="lg:col-span-1">
-            <Card className="sticky top-24">
-              <CardContent className="p-6 space-y-6">
-                <h3 className="font-serif font-bold text-xl text-primary">Order Summary</h3>
-                
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Subtotal</span>
+          {/* Sidebar */}
+          <div className="space-y-4">
+            {/* Order Summary */}
+            <Card className="bg-secondary/30 sticky top-4">
+              <CardContent className="p-6 space-y-4">
+                <h3 className="font-bold text-lg">Order Summary</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Subtotal</span>
                     <span>₹{total.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Shipping</span>
-                    <span className="text-green-600 font-medium">Free</span>
+                  <div className="flex justify-between text-sm">
+                    <span>Delivery</span>
+                    <span className="text-green-600">Free</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Tax</span>
-                    <span>₹{(total * 0.05).toFixed(2)}</span>
+                  <div className="border-t pt-2 flex justify-between font-bold">
+                    <span>Total</span>
+                    <span className="text-primary">₹{total.toFixed(2)}</span>
                   </div>
                 </div>
-                
-                <div className="border-t pt-4 flex justify-between items-center font-bold text-lg">
-                  <span>Total</span>
-                  <span className="text-primary">₹{(total * 1.05).toFixed(2)}</span>
-                </div>
-                
-                <Button className="w-full bg-primary hover:bg-primary/90 h-12 text-lg font-bold" onClick={handleCheckout}>
+
+                {/* Delivery Form */}
+                {showDelivery ? (
+                  <div className="space-y-3 mt-4 pt-4 border-t">
+                    <h4 className="font-semibold text-sm">Delivery Address</h4>
+                    <div className="space-y-2">
+                      <div>
+                        <Label className="text-xs">Address</Label>
+                        <Input
+                          placeholder="Street address"
+                          value={delivery.shippingAddress}
+                          onChange={(e) => setDelivery({...delivery, shippingAddress: e.target.value})}
+                          className="text-sm h-8"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-xs">City</Label>
+                          <Input
+                            placeholder="City"
+                            value={delivery.city}
+                            onChange={(e) => setDelivery({...delivery, city: e.target.value})}
+                            className="text-sm h-8"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">State</Label>
+                          <Input
+                            placeholder="State"
+                            value={delivery.state}
+                            onChange={(e) => setDelivery({...delivery, state: e.target.value})}
+                            className="text-sm h-8"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-xs">ZIP Code</Label>
+                          <Input
+                            placeholder="ZIP"
+                            value={delivery.zipCode}
+                            onChange={(e) => setDelivery({...delivery, zipCode: e.target.value})}
+                            className="text-sm h-8"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Phone</Label>
+                          <Input
+                            placeholder="Phone"
+                            value={delivery.phone}
+                            onChange={(e) => setDelivery({...delivery, phone: e.target.value})}
+                            className="text-sm h-8"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <Button 
+                    variant="outline" 
+                    className="w-full text-sm h-8 mt-4"
+                    onClick={() => setShowDelivery(true)}
+                  >
+                    Add Delivery Address
+                  </Button>
+                )}
+
+                <Button 
+                  className="w-full bg-primary hover:bg-primary/90 text-white"
+                  onClick={handleCheckout}
+                >
                   Proceed to Checkout
                 </Button>
-                
-                {!user && (
-                  <p className="text-xs text-center text-muted-foreground mt-2">
-                    You'll need to sign in to complete your order.
-                  </p>
-                )}
+
+                <Link href="/products">
+                  <Button variant="outline" className="w-full">
+                    Continue Shopping
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
           </div>

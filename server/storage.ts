@@ -1,9 +1,10 @@
 import { db } from "./db";
 import {
-  users, products, orders, contactMessages,
-  type User, type InsertUser, type Product, type InsertProduct, type Order, type InsertOrder, type ContactMessage, type InsertContactMessage
+  users, products, orders, orderItems, contactMessages,
+  type User, type InsertUser, type Product, type InsertProduct, type Order, type InsertOrder, 
+  type OrderItem, type InsertOrderItem, type ContactMessage, type InsertContactMessage
 } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 export interface IStorage {
   // User
@@ -21,6 +22,13 @@ export interface IStorage {
   // Order
   createOrder(order: InsertOrder): Promise<Order>;
   updateOrderPayment(razorpayOrderId: string, status: string, paymentId?: string): Promise<Order | undefined>;
+  getUserOrders(userId: number): Promise<Order[]>;
+  getOrder(orderId: number): Promise<Order | undefined>;
+  updateOrderDelivery(orderId: number, updates: Partial<InsertOrder>): Promise<Order | undefined>;
+  
+  // Order Items
+  createOrderItem(item: InsertOrderItem): Promise<OrderItem>;
+  getOrderItems(orderId: number): Promise<OrderItem[]>;
   
   // Contact
   createContactMessage(message: InsertContactMessage): Promise<ContactMessage>;
@@ -84,6 +92,29 @@ export class DatabaseStorage implements IStorage {
   async createContactMessage(message: InsertContactMessage): Promise<ContactMessage> {
     const [msg] = await db.insert(contactMessages).values(message).returning();
     return msg;
+  }
+
+  async getUserOrders(userId: number): Promise<Order[]> {
+    return await db.select().from(orders).where(eq(orders.userId, userId));
+  }
+
+  async getOrder(orderId: number): Promise<Order | undefined> {
+    const [order] = await db.select().from(orders).where(eq(orders.id, orderId));
+    return order;
+  }
+
+  async updateOrderDelivery(orderId: number, updates: Partial<InsertOrder>): Promise<Order | undefined> {
+    const [updated] = await db.update(orders).set(updates).where(eq(orders.id, orderId)).returning();
+    return updated;
+  }
+
+  async createOrderItem(item: InsertOrderItem): Promise<OrderItem> {
+    const [orderItem] = await db.insert(orderItems).values(item).returning();
+    return orderItem;
+  }
+
+  async getOrderItems(orderId: number): Promise<OrderItem[]> {
+    return await db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
   }
 }
 

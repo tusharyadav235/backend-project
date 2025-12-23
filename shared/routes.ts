@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { insertUserSchema, insertProductSchema, insertOrderSchema, insertContactSchema, products, users, orders } from './schema';
+import { insertUserSchema, insertProductSchema, insertOrderSchema, insertContactSchema, insertOrderItemSchema, products, users, orders } from './schema';
 
 export const errorSchemas = {
   validation: z.object({
@@ -103,7 +103,15 @@ export const api = {
     create: {
       method: 'POST' as const,
       path: '/api/orders',
-      input: z.object({ productId: z.number(), quantity: z.number() }), // Simplified for MVP
+      input: z.object({ 
+        productId: z.number(), 
+        quantity: z.number(),
+        shippingAddress: z.string().optional(),
+        city: z.string().optional(),
+        state: z.string().optional(),
+        zipCode: z.string().optional(),
+        phone: z.string().optional(),
+      }),
       responses: {
         201: z.object({ orderId: z.number(), razorpayOrderId: z.string(), amount: z.number(), currency: z.string() }),
         400: errorSchemas.validation,
@@ -120,6 +128,37 @@ export const api = {
       responses: {
         200: z.object({ status: z.string() }),
         400: errorSchemas.validation,
+      },
+    },
+    list: {
+      method: 'GET' as const,
+      path: '/api/orders',
+      responses: {
+        200: z.array(z.custom<typeof orders.$inferSelect>()),
+        401: errorSchemas.unauthorized,
+      },
+    },
+    get: {
+      method: 'GET' as const,
+      path: '/api/orders/:id',
+      responses: {
+        200: z.custom<typeof orders.$inferSelect>(),
+        401: errorSchemas.unauthorized,
+        404: errorSchemas.notFound,
+      },
+    },
+    updateDelivery: {
+      method: 'PATCH' as const,
+      path: '/api/orders/:id/delivery',
+      input: z.object({
+        deliveryStatus: z.string().optional(),
+        trackingNumber: z.string().optional(),
+        estimatedDelivery: z.string().optional(),
+      }),
+      responses: {
+        200: z.custom<typeof orders.$inferSelect>(),
+        403: errorSchemas.unauthorized,
+        404: errorSchemas.notFound,
       },
     },
   },

@@ -63,7 +63,7 @@ export async function registerRoutes(
   app.post(api.orders.create.path, async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Login required" });
     
-    const { productId, quantity } = req.body;
+    const { productId, quantity, shippingAddress, city, state, zipCode, phone } = req.body;
     const product = await storage.getProduct(productId);
     if (!product) return res.status(404).json({ message: "Product not found" });
 
@@ -86,12 +86,31 @@ export async function registerRoutes(
       }
     }
 
+    // Calculate estimated delivery (5-7 days)
+    const estimatedDate = new Date();
+    estimatedDate.setDate(estimatedDate.getDate() + 6);
+
     const order = await storage.createOrder({
       userId: req.user.id,
       totalAmount: amount.toString(),
       status: "pending",
       razorpayOrderId,
-      paymentStatus: "pending"
+      paymentStatus: "pending",
+      shippingAddress,
+      city,
+      state,
+      zipCode,
+      phone,
+      deliveryStatus: "pending",
+      estimatedDelivery: estimatedDate.toISOString().split('T')[0],
+    });
+
+    // Create order item
+    await storage.createOrderItem({
+      orderId: order.id,
+      productId,
+      quantity,
+      price: product.price,
     });
 
     res.status(201).json({
@@ -106,11 +125,41 @@ export async function registerRoutes(
   app.post(api.orders.verifyPayment.path, async (req, res) => {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
     
-    // Verify signature using crypto (skip for mock)
-    // if (razorpay) { ... verify ... }
-
     await storage.updateOrderPayment(razorpay_order_id, "paid", razorpay_payment_id);
     res.json({ status: "success" });
+  });
+
+  // Get user's orders
+  app.get(api.orders.list.path, async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Login required" });
+    const orders = await storage.getUserOrders(req.user.id);
+    res.json(orders);
+  });
+
+  // Get single order
+  app.get(api.orders.get.path, async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Login required" });
+    const order = await storage.getOrder(Number(req.params.id));
+    if (!order || order.userId !== req.user.id) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+    const items = await storage.getOrderItems(order.id);
+    res.json({ ...order, items });
+  });
+
+  // Update delivery status (admin only)
+  app.patch(api.orders.updateDelivery.path, async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== 'admin') {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+    const { deliveryStatus, trackingNumber, estimatedDelivery } = req.body;
+    const order = await storage.updateOrderDelivery(Number(req.params.id), {
+      deliveryStatus,
+      trackingNumber,
+      estimatedDelivery,
+    });
+    if (!order) return res.status(404).json({ message: "Order not found" });
+    res.json(order);
   });
 
   // --- Contact ---
