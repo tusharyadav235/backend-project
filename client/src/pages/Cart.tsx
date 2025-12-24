@@ -1,19 +1,21 @@
 import { useCart } from "@/hooks/use-cart";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { Trash2, Plus, Minus, ArrowLeft } from "lucide-react";
+import { Trash2, Plus, Minus, ArrowLeft, CreditCard, Banknote } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 export default function Cart() {
   const { items, removeFromCart, updateQuantity, total, clearCart } = useCart();
   const { user } = useAuth();
   const { toast } = useToast();
   const [showDelivery, setShowDelivery] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'cod' | 'razorpay'>('cod');
   const [delivery, setDelivery] = useState({
     shippingAddress: '',
     city: '',
@@ -49,9 +51,11 @@ export default function Cart() {
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           productId: firstItem.id,
           quantity: firstItem.quantity,
+          paymentMethod,
           ...delivery,
         }),
       });
@@ -59,12 +63,25 @@ export default function Cart() {
       if (!response.ok) throw new Error('Checkout failed');
       
       const data = await response.json();
-      toast({
-        title: "Order Placed!",
-        description: "Your order has been created. Processing payment...",
-      });
-      clearCart();
-      setTimeout(() => window.location.href = '/orders', 1000);
+      
+      if (paymentMethod === 'razorpay' && data.razorpayOrderId) {
+        // Razorpay payment flow
+        toast({
+          title: "Proceed to Payment",
+          description: "Opening payment gateway...",
+        });
+        // In production, integrate Razorpay SDK here
+        clearCart();
+        setTimeout(() => window.location.href = '/orders', 1000);
+      } else {
+        // Cash on Delivery flow
+        toast({
+          title: "Order Placed!",
+          description: "Your order has been confirmed. Payment will be collected on delivery.",
+        });
+        clearCart();
+        setTimeout(() => window.location.href = '/orders', 1000);
+      }
     } catch (err) {
       toast({
         title: "Checkout Failed",
@@ -247,9 +264,31 @@ export default function Cart() {
                   </Button>
                 )}
 
+                {/* Payment Method Selection */}
+                <div className="mt-4 pt-4 border-t space-y-3">
+                  <h4 className="font-semibold text-sm">Payment Method</h4>
+                  <RadioGroup value={paymentMethod} onValueChange={(val) => setPaymentMethod(val as 'cod' | 'razorpay')}>
+                    <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-secondary/20 cursor-pointer">
+                      <RadioGroupItem value="cod" id="cod" />
+                      <Label htmlFor="cod" className="flex-1 cursor-pointer flex items-center gap-2">
+                        <Banknote className="w-4 h-4" />
+                        <span>Cash on Delivery</span>
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-secondary/20 cursor-pointer">
+                      <RadioGroupItem value="razorpay" id="razorpay" />
+                      <Label htmlFor="razorpay" className="flex-1 cursor-pointer flex items-center gap-2">
+                        <CreditCard className="w-4 h-4" />
+                        <span>Razorpay (Online)</span>
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
                 <Button 
-                  className="w-full bg-primary hover:bg-primary/90 text-white"
+                  className="w-full bg-primary hover:bg-primary/90 text-white mt-4"
                   onClick={handleCheckout}
+                  data-testid="button-checkout"
                 >
                   Proceed to Checkout
                 </Button>

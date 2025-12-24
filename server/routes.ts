@@ -63,7 +63,7 @@ export async function registerRoutes(
   app.post(api.orders.create.path, async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Login required" });
     
-    const { productId, quantity, shippingAddress, city, state, zipCode, phone } = req.body;
+    const { productId, quantity, shippingAddress, city, state, zipCode, phone, paymentMethod } = req.body;
     const product = await storage.getProduct(productId);
     if (!product) return res.status(404).json({ message: "Product not found" });
 
@@ -72,7 +72,8 @@ export async function registerRoutes(
 
     let razorpayOrderId = "mock_order_id_" + Date.now();
     
-    if (razorpay) {
+    // Only initialize Razorpay if user selected online payment
+    if (paymentMethod === 'razorpay' && razorpay) {
       try {
         const order = await razorpay.orders.create({
           amount: amountPaise,
@@ -90,18 +91,22 @@ export async function registerRoutes(
     const estimatedDate = new Date();
     estimatedDate.setDate(estimatedDate.getDate() + 6);
 
+    // For COD, set status to "paid" immediately; for online, keep as "pending"
+    const paymentStatus = paymentMethod === 'cod' ? 'paid' : 'pending';
+    const orderStatus = paymentMethod === 'cod' ? 'confirmed' : 'pending';
+
     const order = await storage.createOrder({
       userId: req.user.id,
       totalAmount: amount.toString(),
-      status: "pending",
+      status: orderStatus,
       razorpayOrderId,
-      paymentStatus: "pending",
+      paymentStatus,
       shippingAddress,
       city,
       state,
       zipCode,
       phone,
-      deliveryStatus: "pending",
+      deliveryStatus: paymentMethod === 'cod' ? 'pending' : 'pending',
       estimatedDelivery: estimatedDate.toISOString().split('T')[0],
     });
 

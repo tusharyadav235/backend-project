@@ -40,6 +40,7 @@ export function useCreateProduct() {
       const res = await fetch(api.products.create.path, {
         method: api.products.create.method,
         headers: { "Content-Type": "application/json" },
+        credentials: 'include',
         body: JSON.stringify(data),
       });
       if (!res.ok) {
@@ -66,7 +67,10 @@ export function useDeleteProduct() {
   return useMutation({
     mutationFn: async (id: number) => {
       const url = buildUrl(api.products.delete.path, { id });
-      const res = await fetch(url, { method: api.products.delete.method });
+      const res = await fetch(url, { 
+        method: api.products.delete.method,
+        credentials: 'include',
+      });
       if (!res.ok) throw new Error("Failed to delete product");
     },
     onSuccess: () => {
