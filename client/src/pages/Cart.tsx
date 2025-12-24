@@ -5,7 +5,7 @@ import { Trash2, Plus, Minus, ArrowLeft, CreditCard, Banknote } from "lucide-rea
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -23,6 +23,14 @@ export default function Cart() {
     zipCode: '',
     phone: '',
   });
+
+  // Load Razorpay SDK
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    document.body.appendChild(script);
+  }, []);
 
   const handleCheckout = async () => {
     if (!user) {
@@ -65,14 +73,38 @@ export default function Cart() {
       const data = await response.json();
       
       if (paymentMethod === 'razorpay' && data.razorpayOrderId) {
-        // Razorpay payment flow
-        toast({
-          title: "Proceed to Payment",
-          description: "Opening payment gateway...",
-        });
-        // In production, integrate Razorpay SDK here
-        clearCart();
-        setTimeout(() => window.location.href = '/orders', 1000);
+        // Razorpay payment flow - use Checkout SDK
+        const options = {
+          key: data.key,
+          amount: data.amount,
+          currency: data.currency,
+          order_id: data.razorpayOrderId,
+          name: "Raja Cattle Feed",
+          description: `Order for ${firstItem.name}`,
+          handler: function(response: any) {
+            toast({
+              title: "Payment Successful!",
+              description: "Your order has been confirmed.",
+            });
+            clearCart();
+            setTimeout(() => window.location.href = '/orders', 1000);
+          },
+          prefill: {
+            name: user.fullName || user.username,
+            email: user.email || "",
+            contact: delivery.phone || "",
+          },
+          theme: {
+            color: "#1A3C1A",
+          },
+        };
+        
+        if ((window as any).Razorpay) {
+          const rzp = new (window as any).Razorpay(options);
+          rzp.open();
+        } else {
+          throw new Error('Razorpay not loaded');
+        }
       } else {
         // Cash on Delivery flow
         toast({
@@ -85,7 +117,7 @@ export default function Cart() {
     } catch (err) {
       toast({
         title: "Checkout Failed",
-        description: "There was an error processing your order.",
+        description: err instanceof Error ? err.message : "There was an error processing your order.",
         variant: "destructive"
       });
     }

@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useCart } from "@/hooks/use-cart";
-import { Menu, ShoppingCart, User, X, LogOut } from "lucide-react";
+import { Menu, ShoppingCart, User, X, LogOut, Package } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -88,6 +88,14 @@ export function Header() {
                 <div className="p-2 text-sm font-medium text-muted-foreground border-b mb-1">
                   Hi, {user.username}
                 </div>
+                {user.role !== 'admin' && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/orders" className="flex items-center cursor-pointer">
+                      <Package className="mr-2 h-4 w-4" />
+                      My Orders
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 {user.role === 'admin' && (
                   <DropdownMenuItem asChild>
                     <Link href="/admin">Dashboard</Link>
