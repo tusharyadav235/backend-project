@@ -11,8 +11,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2, Edit, Plus, Package } from "lucide-react";
+import { Trash2, Edit, Plus, Package, MapPin, Phone, User as UserIcon } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { useQuery } from "@tanstack/react-query";
+import { Badge } from "@/components/ui/badge";
 
 export default function Admin() {
   const { user, isLoading: authLoading } = useAuth();
@@ -51,14 +53,79 @@ export default function Admin() {
           </TabsContent>
           
           <TabsContent value="orders">
-            <div className="bg-white p-12 rounded-xl shadow-sm text-center border border-dashed border-gray-300">
-              <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-gray-500">Order Management</h3>
-              <p className="text-gray-400">Order list integration coming soon.</p>
-            </div>
+            <OrderManagement />
           </TabsContent>
         </Tabs>
       </div>
+    </div>
+  );
+}
+
+function OrderManagement() {
+  const { data: orders, isLoading } = useQuery<any[]>({
+    queryKey: ["/api/admin/orders"],
+  });
+
+  if (isLoading) return <div>Loading orders...</div>;
+
+  return (
+    <div className="grid gap-6">
+      {orders?.length === 0 ? (
+        <div className="bg-white p-12 rounded-xl shadow-sm text-center border border-dashed border-gray-300">
+          <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-xl font-bold text-gray-500">No Orders Yet</h3>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {orders?.map((order) => (
+            <Card key={order.id} className="overflow-hidden hover:shadow-md transition-shadow">
+              <CardHeader className="bg-secondary/10 pb-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="text-lg text-primary">Order #{order.id}</CardTitle>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(order.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <Badge variant={order.status === 'confirmed' ? 'default' : 'outline'}>
+                    {order.status.toUpperCase()}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-4 space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <UserIcon className="w-4 h-4 text-primary" />
+                    <span className="font-bold">{order.user?.fullName || order.user?.username || 'N/A'}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <MapPin className="w-4 h-4 text-primary" />
+                    <span>{order.shippingAddress}, {order.city}, {order.state} {order.zipCode}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Phone className="w-4 h-4 text-primary" />
+                    <span>{order.phone}</span>
+                  </div>
+                </div>
+
+                <div className="border-t pt-4">
+                  <p className="text-xs font-bold text-muted-foreground uppercase mb-2">Products</p>
+                  {order.items?.map((item: any) => (
+                    <div key={item.id} className="flex justify-between text-sm">
+                      <span>{item.product?.name} x {item.quantity}</span>
+                      <span className="font-medium">₹{item.price}</span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between mt-2 pt-2 border-t font-bold text-primary">
+                    <span>Total</span>
+                    <span>₹{order.totalAmount}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -214,7 +281,8 @@ function AddProductForm() {
                       <Input 
                         type="number" 
                         {...field} 
-                        onChange={e => field.onChange(parseInt(e.target.value))}
+                        value={field.value ?? ""}
+                        onChange={e => field.onChange(parseInt(e.target.value) || 0)}
                       />
                     </FormControl>
                     <FormMessage />

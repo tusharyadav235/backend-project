@@ -34,7 +34,7 @@ export async function registerRoutes(
   });
 
   app.post(api.products.create.path, async (req, res) => {
-    if (!req.isAuthenticated() || req.user.role !== 'admin') {
+    if (!req.isAuthenticated() || (req.user as any).role !== 'admin') {
       return res.status(403).json({ message: "Unauthorized" });
     }
     const input = api.products.create.input.parse(req.body);
@@ -43,7 +43,7 @@ export async function registerRoutes(
   });
 
   app.put(api.products.update.path, async (req, res) => {
-    if (!req.isAuthenticated() || req.user.role !== 'admin') {
+    if (!req.isAuthenticated() || (req.user as any).role !== 'admin') {
       return res.status(403).json({ message: "Unauthorized" });
     }
     const input = api.products.update.input.parse(req.body);
@@ -52,7 +52,7 @@ export async function registerRoutes(
   });
 
   app.delete(api.products.delete.path, async (req, res) => {
-    if (!req.isAuthenticated() || req.user.role !== 'admin') {
+    if (!req.isAuthenticated() || (req.user as any).role !== 'admin') {
       return res.status(403).json({ message: "Unauthorized" });
     }
     await storage.deleteProduct(Number(req.params.id));
@@ -96,7 +96,7 @@ export async function registerRoutes(
     const orderStatus = paymentMethod === 'cod' ? 'confirmed' : 'pending';
 
     const order = await storage.createOrder({
-      userId: req.user.id,
+      userId: (req.user as any).id,
       totalAmount: amount.toString(),
       status: orderStatus,
       razorpayOrderId,
@@ -108,7 +108,7 @@ export async function registerRoutes(
       phone,
       deliveryStatus: paymentMethod === 'cod' ? 'pending' : 'pending',
       estimatedDelivery: estimatedDate.toISOString().split('T')[0],
-    });
+    } as any);
 
     // Create order item
     await storage.createOrderItem({
@@ -134,10 +134,9 @@ export async function registerRoutes(
     res.json({ status: "success" });
   });
 
-  // Get user's orders
-  app.get(api.orders.list.path, async (req, res) => {
+  app.get("/api/orders", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Login required" });
-    const orders = await storage.getUserOrders(req.user.id);
+    const orders = await storage.getUserOrders((req.user as any).id);
     res.json(orders);
   });
 
@@ -145,7 +144,7 @@ export async function registerRoutes(
   app.get(api.orders.get.path, async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Login required" });
     const order = await storage.getOrder(Number(req.params.id));
-    if (!order || order.userId !== req.user.id) {
+    if (!order || order.userId !== (req.user as any).id) {
       return res.status(404).json({ message: "Order not found" });
     }
     const items = await storage.getOrderItems(order.id);
@@ -154,7 +153,7 @@ export async function registerRoutes(
 
   // Update delivery status (admin only)
   app.patch(api.orders.updateDelivery.path, async (req, res) => {
-    if (!req.isAuthenticated() || req.user.role !== 'admin') {
+    if (!req.isAuthenticated() || (req.user as any).role !== 'admin') {
       return res.status(403).json({ message: "Unauthorized" });
     }
     const { deliveryStatus, trackingNumber, estimatedDelivery } = req.body;
@@ -162,9 +161,26 @@ export async function registerRoutes(
       deliveryStatus,
       trackingNumber,
       estimatedDelivery,
-    });
+    } as any);
     if (!order) return res.status(404).json({ message: "Order not found" });
     res.json(order);
+  });
+
+  app.get("/api/admin/orders", async (req, res) => {
+    if (!req.isAuthenticated() || (req.user as any).role !== 'admin') {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+    const orders = await storage.getOrders();
+    const ordersWithDetails = await Promise.all(orders.map(async (order) => {
+      const user = await storage.getUser(order.userId!);
+      const items = await storage.getOrderItems(order.id);
+      const itemsWithProducts = await Promise.all(items.map(async (item) => {
+        const product = await storage.getProduct(item.productId);
+        return { ...item, product };
+      }));
+      return { ...order, user, items: itemsWithProducts };
+    }));
+    res.json(ordersWithDetails);
   });
 
   // --- Contact ---
@@ -186,14 +202,14 @@ async function seedDatabase() {
     await storage.createProduct({
       name: "Premium Cattle Pellets",
       description: "High quality pellets for maximum nutrition",
-      price: 500.00,
+      price: "500.00",
       imageUrl: "/images/products.png", // Using the copied asset
       category: "Feed"
     });
     await storage.createProduct({
       name: "Mineral Lick Block",
       description: "Essential minerals for cattle health",
-      price: 250.00,
+      price: "250.00",
       imageUrl: "/images/products.png",
       category: "Supplements"
     });

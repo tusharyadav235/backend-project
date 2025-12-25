@@ -20,6 +20,7 @@ export interface IStorage {
   deleteProduct(id: number): Promise<void>;
 
   // Order
+  getOrders(): Promise<Order[]>;
   createOrder(order: InsertOrder): Promise<Order>;
   updateOrderPayment(razorpayOrderId: string, status: string, paymentId?: string): Promise<Order | undefined>;
   getUserOrders(userId: number): Promise<Order[]>;
@@ -71,6 +72,10 @@ export class DatabaseStorage implements IStorage {
 
   async deleteProduct(id: number): Promise<void> {
     await db.delete(products).where(eq(products.id, id));
+  }
+
+  async getOrders(): Promise<Order[]> {
+    return await db.select().from(orders);
   }
 
   async createOrder(insertOrder: InsertOrder): Promise<Order> {

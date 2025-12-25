@@ -71,11 +71,6 @@ export const insertOrderSchema = createInsertSchema(orders).omit({
   id: true, 
   createdAt: true, 
   updatedAt: true,
-  razorpayOrderId: true, 
-  paymentStatus: true,
-  deliveryStatus: true,
-  trackingNumber: true,
-  estimatedDelivery: true,
 });
 export const insertOrderItemSchema = createInsertSchema(orderItems).omit({ id: true });
 export const insertContactSchema = createInsertSchema(contactMessages).omit({ id: true, createdAt: true });
