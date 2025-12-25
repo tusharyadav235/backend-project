@@ -201,6 +201,7 @@ function ProductList() {
 
 function AddProductForm() {
   const createMutation = useCreateProduct();
+  const [isUploading, setIsUploading] = useState(false);
   const form = useForm<InsertProduct>({
     resolver: zodResolver(insertProductSchema),
     defaultValues: {
@@ -212,6 +213,19 @@ function AddProductForm() {
       category: "feed",
     },
   });
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setIsUploading(true);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        form.setValue("imageUrl", reader.result as string);
+        setIsUploading(false);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const onSubmit = (data: InsertProduct) => {
     // Ensure price is string for decimal type in DB

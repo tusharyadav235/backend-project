@@ -137,7 +137,15 @@ export async function registerRoutes(
   app.get("/api/orders", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Login required" });
     const orders = await storage.getUserOrders((req.user as any).id);
-    res.json(orders);
+    const ordersWithItems = await Promise.all(orders.map(async (order) => {
+      const items = await storage.getOrderItems(order.id);
+      const itemsWithProducts = await Promise.all(items.map(async (item) => {
+        const product = await storage.getProduct(item.productId);
+        return { ...item, product };
+      }));
+      return { ...order, items: itemsWithProducts };
+    }));
+    res.json(ordersWithItems);
   });
 
   // Get single order
