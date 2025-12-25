@@ -63,7 +63,7 @@ export default function Cart() {
         body: JSON.stringify({
           productId: firstItem.id,
           quantity: firstItem.quantity,
-          paymentMethod,
+          paymentMethod: 'cod',
           ...delivery,
         }),
       });
@@ -72,48 +72,13 @@ export default function Cart() {
       
       const data = await response.json();
       
-      if (paymentMethod === 'razorpay' && data.razorpayOrderId) {
-        // Razorpay payment flow - use Checkout SDK
-        const options = {
-          key: data.key,
-          amount: data.amount,
-          currency: data.currency,
-          order_id: data.razorpayOrderId,
-          name: "Raja Cattle Feed",
-          description: `Order for ${firstItem.name}`,
-          handler: function(response: any) {
-            toast({
-              title: "Payment Successful!",
-              description: "Your order has been confirmed.",
-            });
-            clearCart();
-            setTimeout(() => window.location.href = '/orders', 1000);
-          },
-          prefill: {
-            name: user.fullName || user.username,
-            email: user.email || "",
-            contact: delivery.phone || "",
-          },
-          theme: {
-            color: "#1A3C1A",
-          },
-        };
-        
-        if ((window as any).Razorpay) {
-          const rzp = new (window as any).Razorpay(options);
-          rzp.open();
-        } else {
-          throw new Error('Razorpay not loaded');
-        }
-      } else {
-        // Cash on Delivery flow
-        toast({
-          title: "Order Placed!",
-          description: "Your order has been confirmed. Payment will be collected on delivery.",
-        });
-        clearCart();
-        setTimeout(() => window.location.href = '/orders', 1000);
-      }
+      // Cash on Delivery flow
+      toast({
+        title: "Order Placed!",
+        description: "Your order has been confirmed. Payment will be collected on delivery.",
+      });
+      clearCart();
+      setTimeout(() => window.location.href = '/orders', 1000);
     } catch (err) {
       toast({
         title: "Checkout Failed",
@@ -296,25 +261,13 @@ export default function Cart() {
                   </Button>
                 )}
 
-                {/* Payment Method Selection */}
+                {/* Payment Method - Cash on Delivery Only */}
                 <div className="mt-4 pt-4 border-t space-y-3">
                   <h4 className="font-semibold text-sm">Payment Method</h4>
-                  <RadioGroup value={paymentMethod} onValueChange={(val) => setPaymentMethod(val as 'cod' | 'razorpay')}>
-                    <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-secondary/20 cursor-pointer">
-                      <RadioGroupItem value="cod" id="cod" />
-                      <Label htmlFor="cod" className="flex-1 cursor-pointer flex items-center gap-2">
-                        <Banknote className="w-4 h-4" />
-                        <span>Cash on Delivery</span>
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-secondary/20 cursor-pointer">
-                      <RadioGroupItem value="razorpay" id="razorpay" />
-                      <Label htmlFor="razorpay" className="flex-1 cursor-pointer flex items-center gap-2">
-                        <CreditCard className="w-4 h-4" />
-                        <span>Razorpay (Online)</span>
-                      </Label>
-                    </div>
-                  </RadioGroup>
+                  <div className="flex items-center space-x-3 p-3 border rounded-lg bg-secondary/10">
+                    <Banknote className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-medium">Cash on Delivery</span>
+                  </div>
                 </div>
 
                 <Button 

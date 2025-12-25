@@ -37,15 +37,16 @@ export function Footer() {
           <ul className="space-y-3 text-sm">
             <li className="flex items-start gap-3">
               <MapPin className="h-5 w-5 shrink-0 text-accent" />
-              <span>123 Farm Road, Green Valley,<br />Punjab, India 141001</span>
+              <span>Meerpur, Meerut, <br />India
+                250202</span>
             </li>
             <li className="flex items-center gap-3">
               <Phone className="h-5 w-5 shrink-0 text-accent" />
-              <span>+91 98765 43210</span>
+              <span>+91 9458681229</span>
             </li>
             <li className="flex items-center gap-3">
               <Mail className="h-5 w-5 shrink-0 text-accent" />
-              <span>info@rajacattlefeed.com</span>
+              <span>ggoswami240@gmail.com</span>
             </li>
           </ul>
         </div>

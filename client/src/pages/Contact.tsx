@@ -64,9 +64,9 @@ export default function Contact() {
             <h2 className="text-2xl font-serif font-bold text-primary">Get in Touch</h2>
             <div className="grid gap-6">
               {[
-                { icon: MapPin, title: "Visit Us", content: "123 Farm Road, Green Valley, Punjab, India 141001" },
-                { icon: Phone, title: "Call Us", content: "+91 98765 43210" },
-                { icon: Mail, title: "Email Us", content: "info@rajacattlefeed.com" },
+                { icon: MapPin, title: "Visit Us", content: "Meerpur Meerut India, 250202" },
+                { icon: Phone, title: "Call Us", content: "+91 9458681229" },
+                { icon: Mail, title: "Email Us", content: "ggoswami240@gmail.com" },
                 { icon: Clock, title: "Opening Hours", content: "Mon - Sat: 9:00 AM - 6:00 PM" }
               ].map((item, i) => (
                 <div key={i} className="flex items-start gap-4 p-4 bg-white rounded-xl shadow-sm border border-secondary">

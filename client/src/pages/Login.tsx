@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -25,6 +26,7 @@ export default function Login() {
   const { loginMutation, registerMutation, user } = useAuth();
   const [, setLocation] = useLocation();
   const [isRegister, setIsRegister] = useState(false);
+  const { toast } = useToast();
 
   // Redirect if already logged in
   if (user) {
@@ -58,7 +60,7 @@ export default function Login() {
             {isRegister ? (
               <RegisterForm onSuccess={() => setLocation("/")} mutation={registerMutation} />
             ) : (
-              <LoginForm onSuccess={() => setLocation("/")} mutation={loginMutation} />
+              <LoginForm onSuccess={() => setLocation("/")} mutation={loginMutation} toast={toast} />
             )}
           </CardContent>
           <CardFooter className="flex justify-center border-t p-4 bg-gray-50 rounded-b-xl">
@@ -72,7 +74,7 @@ export default function Login() {
   );
 }
 
-function LoginForm({ onSuccess, mutation }: { onSuccess: () => void, mutation: any }) {
+function LoginForm({ onSuccess, mutation, toast }: { onSuccess: () => void, mutation: any, toast: any }) {
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: { username: "", password: "" },
@@ -111,6 +113,21 @@ function LoginForm({ onSuccess, mutation }: { onSuccess: () => void, mutation: a
             </FormItem>
           )}
         />
+        <div className="flex justify-end">
+          <Button 
+            variant="link" 
+            type="button"
+            className="px-0 text-xs text-muted-foreground"
+            onClick={() => {
+              toast({
+                title: "Forgot Password",
+                description: "Please contact support at ggoswami240@gmail.com to reset your password.",
+              });
+            }}
+          >
+            Forgot Password?
+          </Button>
+        </div>
         <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={mutation.isPending}>
           {mutation.isPending ? "Signing in..." : "Sign In"}
         </Button>
