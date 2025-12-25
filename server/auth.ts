@@ -96,10 +96,16 @@ export function setupAuth(app: Express) {
       }
 
       // Simple approach - password stored as-is (use bcrypt in production)
-      const user = await storage.createUser({
-        ...input,
-        role: input.role || "customer", // Allow role from request, default to customer
-      });
+      const userData = {
+        username: input.username,
+        password: input.password,
+        fullName: input.fullName || null,
+        email: input.email || null,
+        phone: null,
+        role: "customer"
+      };
+
+      const user = await storage.createUser(userData);
 
       // Auto-login after registration
       req.login(user, (err) => {

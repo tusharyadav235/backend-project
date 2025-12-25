@@ -64,7 +64,7 @@ export default function Login() {
             )}
           </CardContent>
           <CardFooter className="flex justify-center border-t p-4 bg-gray-50 rounded-b-xl">
-            <Button variant="link" onClick={() => setIsRegister(!isRegister)} className="text-primary font-bold">
+            <Button variant="ghost" onClick={() => setIsRegister(!isRegister)} className="text-primary font-bold hover:bg-transparent">
               {isRegister ? "Already have an account? Sign In" : "Don't have an account? Sign Up"}
             </Button>
           </CardFooter>
@@ -115,9 +115,9 @@ function LoginForm({ onSuccess, mutation, toast }: { onSuccess: () => void, muta
         />
         <div className="flex justify-end">
           <Button 
-            variant="link" 
+            variant="ghost" 
             type="button"
-            className="px-0 text-xs text-muted-foreground"
+            className="px-0 text-xs text-muted-foreground hover:bg-transparent"
             onClick={() => {
               toast({
                 title: "Forgot Password",
