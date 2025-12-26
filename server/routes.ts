@@ -148,6 +148,15 @@ export async function registerRoutes(
     res.json(ordersWithItems);
   });
 
+  // Get all contact messages (admin only)
+  app.get("/api/admin/messages", async (req, res) => {
+    if (!req.isAuthenticated() || (req.user as any).role !== 'admin') {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+    const messages = await storage.getContactMessages();
+    res.json(messages);
+  });
+
   // Get single order
   app.get(api.orders.get.path, async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Login required" });

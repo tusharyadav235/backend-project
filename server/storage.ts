@@ -4,7 +4,7 @@ import {
   type User, type InsertUser, type Product, type InsertProduct, type Order, type InsertOrder, 
   type OrderItem, type InsertOrderItem, type ContactMessage, type InsertContactMessage
 } from "@shared/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 
 export interface IStorage {
   // User
@@ -33,6 +33,7 @@ export interface IStorage {
   
   // Contact
   createContactMessage(message: InsertContactMessage): Promise<ContactMessage>;
+  getContactMessages(): Promise<ContactMessage[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -122,6 +123,10 @@ export class DatabaseStorage implements IStorage {
 
   async getOrderItems(orderId: number): Promise<OrderItem[]> {
     return await db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
+  }
+
+  async getContactMessages(): Promise<ContactMessage[]> {
+    return await db.select().from(contactMessages).orderBy(desc(contactMessages.createdAt));
   }
 }
 
