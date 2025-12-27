@@ -35,7 +35,6 @@ export async function registerRoutes(
 
   app.post(api.products.create.path, async (req, res) => {
     if (!req.isAuthenticated() || (req.user as any).role !== 'admin') {
-      console.log("Create product failed auth:", { auth: req.isAuthenticated(), user: req.user });
       return res.status(403).json({ message: "Unauthorized" });
     }
     const input = api.products.create.input.parse(req.body);
@@ -137,7 +136,15 @@ export async function registerRoutes(
 
   app.get("/api/orders", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Login required" });
-    const orders = await storage.getUserOrders((req.user as any).id);
+    const user = req.user as any;
+    
+    let orders;
+    if (user.role === 'admin') {
+      orders = await storage.getOrders();
+    } else {
+      orders = await storage.getUserOrders(user.id);
+    }
+
     const ordersWithItems = await Promise.all(orders.map(async (order) => {
       const items = await storage.getOrderItems(order.id);
       const itemsWithProducts = await Promise.all(items.map(async (item) => {
