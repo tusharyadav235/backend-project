@@ -35,6 +35,7 @@ export async function registerRoutes(
 
   app.post(api.products.create.path, async (req, res) => {
     if (!req.isAuthenticated() || (req.user as any).role !== 'admin') {
+      console.log("Create product failed auth:", { auth: req.isAuthenticated(), user: req.user });
       return res.status(403).json({ message: "Unauthorized" });
     }
     const input = api.products.create.input.parse(req.body);
