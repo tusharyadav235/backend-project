@@ -102,12 +102,12 @@ export default function Orders() {
                       <div key={item.id} className="flex justify-between items-center text-sm">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded bg-muted overflow-hidden flex-shrink-0">
-                            {item.product?.imageUrl && (
-                              <img src={item.product.imageUrl} alt={item.product.name} className="w-full h-full object-cover" />
+                            {(item as any).product?.imageUrl && (
+                              <img src={(item as any).product.imageUrl} alt={(item as any).product.name} className="w-full h-full object-cover" />
                             )}
                           </div>
                           <div>
-                            <p className="font-medium">{item.product?.name || "Product"}</p>
+                            <p className="font-medium">{(item as any).product?.name || "Product"}</p>
                             <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
                           </div>
                         </div>
