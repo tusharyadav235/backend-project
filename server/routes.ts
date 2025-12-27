@@ -176,6 +176,22 @@ export async function registerRoutes(
     res.json({ ...order, items });
   });
 
+  // Update order status (admin only)
+  app.patch("/api/orders/:id/status", async (req, res) => {
+    if (!req.isAuthenticated() || (req.user as any).role !== 'admin') {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+    const { status } = req.body;
+    if (!status) return res.status(400).json({ message: "Status is required" });
+    
+    const order = await storage.updateOrderDelivery(Number(req.params.id), {
+      status
+    } as any);
+    
+    if (!order) return res.status(404).json({ message: "Order not found" });
+    res.json(order);
+  });
+
   // Update delivery status (admin only)
   app.patch(api.orders.updateDelivery.path, async (req, res) => {
     if (!req.isAuthenticated() || (req.user as any).role !== 'admin') {

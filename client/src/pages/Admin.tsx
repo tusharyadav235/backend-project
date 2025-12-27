@@ -25,6 +25,9 @@ import {
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Admin() {
   const { user, isLoading: authLoading } = useAuth();
@@ -160,6 +163,24 @@ function OrderManagement() {
   const { data: orders, isLoading } = useQuery<any[]>({
     queryKey: ["/api/admin/orders"],
   });
+  const { toast } = useToast();
+
+  const updateStatus = async (orderId: number, status: string) => {
+    try {
+      await apiRequest("PATCH", `/api/orders/${orderId}/status`, { status });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/orders"] });
+      toast({
+        title: "Status Updated",
+        description: `Order #${orderId} marked as ${status}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update order status",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (isLoading) return <div>Loading orders...</div>;
 
@@ -182,9 +203,26 @@ function OrderManagement() {
                       {new Date(order.createdAt).toLocaleDateString()}
                     </p>
                   </div>
-                  <Badge variant={order.status === 'confirmed' ? 'default' : 'outline'}>
-                    {order.status.toUpperCase()}
-                  </Badge>
+                  <div className="flex flex-col gap-2 items-end">
+                    <Badge variant={order.status === 'confirmed' ? 'default' : 'outline'}>
+                      {order.status.toUpperCase()}
+                    </Badge>
+                    <Select 
+                      defaultValue={order.status} 
+                      onValueChange={(value) => updateStatus(order.id, value)}
+                    >
+                      <SelectTrigger className="h-8 w-32 text-xs">
+                        <SelectValue placeholder="Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="approved">Approved</SelectItem>
+                        <SelectItem value="confirmed">Confirmed</SelectItem>
+                        <SelectItem value="shipped">Shipped</SelectItem>
+                        <SelectItem value="delivered">Delivered</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="pt-4 space-y-4">
