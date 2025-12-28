@@ -54,14 +54,14 @@ export default function Orders() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <div className="bg-primary text-white py-12">
+      <div className="bg-primary text-white py-8 md:py-12">
         <div className="container-custom">
-          <h1 className="text-3xl font-serif font-bold">My Orders</h1>
-          <p className="opacity-80 mt-2">Track and manage your deliveries</p>
+          <h1 className="text-2xl md:text-3xl font-serif font-bold">My Orders</h1>
+          <p className="opacity-80 mt-2 text-sm md:text-base">Track and manage your deliveries</p>
         </div>
       </div>
 
-      <div className="container-custom py-12">
+      <div className="container-custom py-8 md:py-12">
         {ordersWithItems.length === 0 ? (
           <div className="text-center py-12">
             <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />

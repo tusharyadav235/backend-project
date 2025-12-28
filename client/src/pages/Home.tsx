@@ -12,7 +12,7 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
-      <section className="relative h-[600px] flex items-center justify-center overflow-hidden">
+      <section className="relative min-h-[500px] md:h-[600px] flex items-center justify-center overflow-hidden py-20 md:py-0">
         {/* Background Image with Overlay */}
         <div className="absolute inset-0 z-0">
           {/* Using the hero image from user assets */}

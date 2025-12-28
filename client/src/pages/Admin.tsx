@@ -34,6 +34,8 @@ export default function Admin() {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("products");
 
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   if (authLoading) return <div className="h-screen flex items-center justify-center">Loading...</div>;
 
   if (!user || user.role !== 'admin') {
@@ -49,10 +51,18 @@ export default function Admin() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
+      {/* Mobile Header */}
+      <div className="md:hidden bg-primary text-white p-4 flex justify-between items-center sticky top-0 z-50">
+        <h2 className="text-xl font-serif font-bold">Admin Panel</h2>
+        <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(!sidebarOpen)}>
+          <LayoutDashboard className="w-6 h-6" />
+        </Button>
+      </div>
+
       {/* Sidebar */}
-      <div className="w-64 bg-primary text-white p-6 space-y-8 flex-shrink-0">
-        <div>
+      <div className={`${sidebarOpen ? 'block' : 'hidden'} md:block w-full md:w-64 bg-primary text-white p-6 space-y-8 flex-shrink-0 min-h-screen md:min-h-0`}>
+        <div className="hidden md:block">
           <h2 className="text-2xl font-serif font-bold tracking-tight">Admin Panel</h2>
           <p className="text-primary-foreground/60 text-sm">Raja Cattle Feed</p>
         </div>
@@ -61,7 +71,10 @@ export default function Admin() {
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => {
+                setActiveTab(tab.id);
+                setSidebarOpen(false);
+              }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                 activeTab === tab.id 
                   ? "bg-white text-primary font-bold shadow-sm" 
@@ -77,13 +90,13 @@ export default function Admin() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-10 overflow-auto">
-        <header className="mb-10 flex justify-between items-center">
-          <h1 className="text-3xl font-serif font-bold text-gray-900">
+      <div className="flex-1 p-4 md:p-10 overflow-auto">
+        <header className="mb-6 md:mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h1 className="text-2xl md:text-3xl font-serif font-bold text-gray-900">
             {tabs.find(t => t.id === activeTab)?.label}
           </h1>
           <Link href="/">
-            <Button variant="outline" data-testid="button-view-site">View Site</Button>
+            <Button variant="outline" className="w-full sm:w-auto" data-testid="button-view-site">View Site</Button>
           </Link>
         </header>
 
@@ -276,8 +289,8 @@ function ProductList() {
           <CardTitle>Product Inventory</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border">
-            <table className="w-full text-sm text-left">
+          <div className="rounded-md border overflow-x-auto">
+            <table className="w-full text-sm text-left min-w-[600px]">
               <thead className="bg-muted text-muted-foreground uppercase text-xs font-bold">
                 <tr>
                   <th className="px-6 py-3">Image</th>
@@ -404,7 +417,7 @@ function AddProductForm() {
               )}
             />
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="price"
