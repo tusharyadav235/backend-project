@@ -1,9 +1,10 @@
 import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 import bcrypt from "bcryptjs";
+import { createServer } from "http";
+
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
-import { createServer } from "http";
 import { storage } from "./storage";
 
 const app = express();
@@ -16,7 +17,7 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: false, limit: "10mb" }));
 
 /* ---------------- LOGGER ---------------- */
-export function log(message: string, source = "express") {
+export function log(message: string, source = "server") {
   const time = new Date().toLocaleTimeString("en-IN");
   console.log(`${time} [${source}] ${message}`);
 }
@@ -27,7 +28,10 @@ app.use((req, res, next) => {
 
   res.on("finish", () => {
     if (path.startsWith("/api")) {
-      log(`${req.method} ${path} ${res.statusCode} ${Date.now() - start}ms`);
+      log(
+        `${req.method} ${path} ${res.statusCode} ${Date.now() - start}ms`,
+        "http"
+      );
     }
   });
 
@@ -35,23 +39,22 @@ app.use((req, res, next) => {
 });
 
 /* ---------------- ADMIN INIT (PRODUCTION SAFE) ---------------- */
-const ensureAdmin = async () => {
+async function ensureAdmin() {
   try {
-    const adminUsername = process.env.ADMIN_USERNAME;
-    const adminPassword = process.env.ADMIN_PASSWORD;
+    const { ADMIN_USERNAME, ADMIN_PASSWORD } = process.env;
 
-    if (!adminUsername || !adminPassword) {
-      console.warn("⚠️ Admin credentials not set in ENV");
+    if (!ADMIN_USERNAME || !ADMIN_PASSWORD) {
+      log("Admin ENV not set, skipping admin creation", "warn");
       return;
     }
 
-    const admin = await storage.getUserByUsername(adminUsername);
+    const admin = await storage.getUserByUsername(ADMIN_USERNAME);
 
     if (!admin) {
-      const hashedPassword = await bcrypt.hash(adminPassword, 10);
+      const hashedPassword = await bcrypt.hash(ADMIN_PASSWORD, 10);
 
       await storage.createUser({
-        username: adminUsername,
+        username: ADMIN_USERNAME,
         password: hashedPassword,
         role: "admin",
         fullName: "Administrator",
@@ -59,22 +62,24 @@ const ensureAdmin = async () => {
         phone: process.env.ADMIN_PHONE || "",
       });
 
-      log("✅ Admin user created from ENV");
+      log("Admin user created from ENV", "auth");
     }
   } catch (err) {
     log("Admin creation failed", "error");
   }
-};
+}
 
-/* ---------------- APP START ---------------- */
-(async () => {
+/* ---------------- APP BOOTSTRAP ---------------- */
+async function startServer() {
   await registerRoutes(httpServer, app);
   await ensureAdmin();
 
   if (process.env.NODE_ENV === "production") {
+    // 👉 Production: serve built frontend
     serveStatic(app);
   } else {
-    const { setupVite } = await import("./vite");
+    // 👉 Development: load Vite ONLY in dev (important)
+    const { setupVite } = await import("../dev/vite");
     await setupVite(httpServer, app);
   }
 
@@ -89,4 +94,6 @@ const ensureAdmin = async () => {
   httpServer.listen(port, "0.0.0.0", () => {
     log(`🚀 Server running on port ${port}`);
   });
-})();
+}
+
+startServer();

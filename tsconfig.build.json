@@ -1,0 +1,42 @@
+{
+  "extends": "./tsconfig.json",
+
+  "compilerOptions": {
+    /* ---------- OUTPUT ---------- */
+    "outDir": "dist",
+    "rootDir": ".",
+
+    /* ---------- MODULE ---------- */
+    "module": "CommonJS",
+    "target": "ES2022",
+    "moduleResolution": "node",
+
+    /* ---------- PATH ALIAS ---------- */
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["shared/*"]
+    },
+
+    /* ---------- SAFETY ---------- */
+    "strict": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+
+    /* ---------- BUILD ---------- */
+    "noEmit": false
+  },
+
+  "include": [
+    "server/**/*.ts",
+    "shared/**/*.ts"
+  ],
+
+  "exclude": [
+    "dev/**/*",
+    "client/**/*",
+    "vite.config.ts",
+    "**/*.test.ts",
+    "node_modules"
+  ]
+}
