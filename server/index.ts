@@ -1,4 +1,6 @@
+import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
+import bcrypt from "bcryptjs";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
@@ -7,99 +9,68 @@ import { storage } from "./storage";
 const app = express();
 const httpServer = createServer(app);
 
-// Initialize admin user if it doesn't exist
-const ensureAdmin = async () => {
-  try {
-    const admin = await storage.getUserByUsername("admin");
-    if (!admin) {
-      await storage.createUser({
-        username: "admin",
-        password: "admin123",
-        role: "admin",
-        fullName: "Administrator",
-        email: "ggoswami240@gmail.com",
-        phone: "9458681229"
-      });
-      log("Admin user created: admin / admin123");
-    } else if (admin.password !== "admin123") {
-      // Ensure the password is correct for the user's request
-      // In a real app we wouldn't overwrite, but for this dev setup it helps the user
-      log("Admin user exists but password mismatch. User should use existing creds.");
-    }
-  } catch (err) {
-    log("Error ensuring admin user: " + err);
-  }
-};
+/* ---------------- BASIC CONFIG ---------------- */
+app.set("trust proxy", 1);
 
-declare module "http" {
-  interface IncomingMessage {
-    rawBody: unknown;
-  }
-}
-
-app.use(
-  express.json({
-    limit: "10mb",
-    verify: (req, _res, buf) => {
-      req.rawBody = buf;
-    },
-  }),
-);
-
+app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: false, limit: "10mb" }));
 
+/* ---------------- LOGGER ---------------- */
 export function log(message: string, source = "express") {
-  const formattedTime = new Date().toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  });
-
-  console.log(`${formattedTime} [${source}] ${message}`);
+  const time = new Date().toLocaleTimeString("en-IN");
+  console.log(`${time} [${source}] ${message}`);
 }
 
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
-
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
 
   res.on("finish", () => {
-    const duration = Date.now() - start;
     if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      log(logLine);
+      log(`${req.method} ${path} ${res.statusCode} ${Date.now() - start}ms`);
     }
   });
 
   next();
 });
 
+/* ---------------- ADMIN INIT (PRODUCTION SAFE) ---------------- */
+const ensureAdmin = async () => {
+  try {
+    const adminUsername = process.env.ADMIN_USERNAME;
+    const adminPassword = process.env.ADMIN_PASSWORD;
+
+    if (!adminUsername || !adminPassword) {
+      console.warn("⚠️ Admin credentials not set in ENV");
+      return;
+    }
+
+    const admin = await storage.getUserByUsername(adminUsername);
+
+    if (!admin) {
+      const hashedPassword = await bcrypt.hash(adminPassword, 10);
+
+      await storage.createUser({
+        username: adminUsername,
+        password: hashedPassword,
+        role: "admin",
+        fullName: "Administrator",
+        email: process.env.ADMIN_EMAIL || "admin@example.com",
+        phone: process.env.ADMIN_PHONE || "",
+      });
+
+      log("✅ Admin user created from ENV");
+    }
+  } catch (err) {
+    log("Admin creation failed", "error");
+  }
+};
+
+/* ---------------- APP START ---------------- */
 (async () => {
   await registerRoutes(httpServer, app);
   await ensureAdmin();
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-
-    res.status(status).json({ message });
-    throw err;
-  });
-
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
   if (process.env.NODE_ENV === "production") {
     serveStatic(app);
   } else {
@@ -107,19 +78,15 @@ app.use((req, res, next) => {
     await setupVite(httpServer, app);
   }
 
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || "5000", 10);
-  httpServer.listen(
-    {
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-    },
-    () => {
-      log(`serving on port ${port}`);
-    },
-  );
+  /* -------- GLOBAL ERROR HANDLER (LAST) -------- */
+  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    const status = err.status || 500;
+    log(err.message || "Unhandled error", "error");
+    res.status(status).json({ message: "Internal Server Error" });
+  });
+
+  const port = Number(process.env.PORT || 5000);
+  httpServer.listen(port, "0.0.0.0", () => {
+    log(`🚀 Server running on port ${port}`);
+  });
 })();
