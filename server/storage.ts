@@ -1,9 +1,9 @@
 import { db } from "./db";
 import {
-  users, products, orders, orderItems, contactMessages,
+  users, products, orders, orderItems, contactMessages,insertUserSchema,
   type User, type InsertUser, type Product, type InsertProduct, type Order, type InsertOrder, 
   type OrderItem, type InsertOrderItem, type ContactMessage, type InsertContactMessage
-} from "@shared/schema";
+} from "../shared/schema";
 import { eq, and, desc } from "drizzle-orm";
 
 export interface IStorage {

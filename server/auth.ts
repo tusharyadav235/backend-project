@@ -2,7 +2,7 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import type { Express } from "express";
 import { storage } from "./storage";
-import { insertUserSchema } from "@shared/schema";
+import { insertUserSchema } from "../shared/schema";
 import { z } from "zod";
 import session from "express-session";
 import { randomBytes } from "crypto";
